@@ -1,38 +1,108 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next.js Route Handlers
 
-## Getting Started
+Route Handlers are defined in a route.tsx file in the app directory.
 
-First, run the development server:
+## Cookies
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+[beta docs](https://beta.nextjs.org/docs/routing/route-handlers#cookies)
+
+**read cookies**: use the cookies function from 'next/headers'  
+**set cookies**: return a new Response with a Set-Cookie header
+
+Example:
+
+```ts
+import { cookies } from 'next/headers'
+
+export async function GET(request: Request) {
+  // Get the (new) language from the search params, e.g. /api/language?lang=ned
+  const { searchParams } = new URL(request.url)
+  const langSearchParam = searchParams.get('lang')
+
+  // Get the (old) language from the cookie in the request, e.g. lang=ned
+  const cookieStore = cookies()
+  const langCookie = cookieStore.get('lang')
+
+  // send a response with the new language set as a cookie
+  return new Response(
+    `Your preferred language was ${langCookie?.value}. We will now set it to ${langSearchParam}.`,
+    {
+      headers: { 'Set-Cookie': `lang=${langSearchParam}` },
+      status: 200
+    }
+  )
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Headers
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+[beta docs](https://beta.nextjs.org/docs/routing/route-handlers#headers)
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+**read headers**: use the headers function from 'next/headers'  
+**set headers**: return a new Response with the new headers
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+Example:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```ts
+import { headers } from 'next/headers'
 
-## Learn More
+export async function GET(request: Request) {
+  const headerList = headers()
+  const host = headerList.get('host')
+  const userAgent = headerList.get('user-agent')
 
-To learn more about Next.js, take a look at the following resources:
+  return new Response(`You made the request from ${host}. Your user agent is ${userAgent}.`, {
+    headers: { 'content-type': 'text/plain', 'Set-Cookie': `looked-at-headers=true` },
+    status: 200
+  })
+}
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Redirects
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+[beta docs](https://beta.nextjs.org/docs/routing/route-handlers#redirects)
 
-## Deploy on Vercel
+Example:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```ts
+import { headers } from 'next/headers'
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+export async function GET(request: Request) {
+  const headerList = headers()
+  const host = headerList.get('host')
+  const userAgent = headerList.get('user-agent')
+
+  return new Response(`You made the request from ${host}. Your user agent is ${userAgent}.`, {
+    headers: { 'content-type': 'text/plain', 'Set-Cookie': `looked-at-headers=true` },
+    status: 200
+  })
+}
+```
+
+## Dynamic Route Segments
+
+[beta docs](https://beta.nextjs.org/docs/routing/route-handlers#dynamic-route-segments)
+
+Example:
+
+```ts
+export async function GET(request: Request, { params }: { params: { slug: string } }) {
+  const { slug } = params
+  return new Response(`The slug is: ${slug}`)
+}
+```
+
+## Post request body
+
+[docs](https://developer.mozilla.org/en-US/docs/Web/API/Request/json)
+
+Example:
+
+```ts
+export async function POST(request: Request) {
+  // to test this, send a POST request to /api/post-data with a JSON body 
+  // like: { "name": "John Doe", "email": "j.Doe@test.com" }
+  const { name, email } = await request.json()
+  return new Response(`Hello ${name}! Your email is ${email}.`)
+}
+```
